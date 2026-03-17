@@ -25,6 +25,7 @@ def get_lark_client() -> lark.Client:
             lark.Client.builder()
             .app_id(settings.lark_app_id)
             .app_secret(settings.lark_app_secret)
+            .domain(lark.FEISHU_DOMAIN)
             .log_level(lark.LogLevel.DEBUG if settings.debug else lark.LogLevel.INFO)
             .build()
         )
