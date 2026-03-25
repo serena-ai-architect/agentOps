@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 
-app = FastAPI(title="HepOps 运维自动化引擎", lifespan=lifespan)
+app = FastAPI(title="AgentOps — AI-native DevOps Platform", lifespan=lifespan)
 
 from api.lark_events import router as lark_router  # noqa: E402
 

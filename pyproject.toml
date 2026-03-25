@@ -1,7 +1,7 @@
 [project]
-name = "hepops"
+name = "agentops"
 version = "0.1.0"
-description = "运维自动化引擎 — 飞书审批驱动，多云资源自动开通"
+description = "AI-native DevOps platform — replacing manual ops with autonomous agents"
 requires-python = ">=3.12"
 dependencies = [
     # Web framework

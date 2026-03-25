@@ -2,9 +2,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """HepOps 运维自动化引擎配置"""
+    """AgentOps — AI-native DevOps platform configuration"""
 
-    model_config = {"env_prefix": "HEPOPS_", "env_file": ".env"}
+    model_config = {"env_prefix": "AGENTOPS_", "env_file": ".env"}
 
     # --- App ---
     debug: bool = False
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     cost_report_day: int = 1  # 每月几号发送成本报表
 
     # --- Database ---
-    database_url: str = "sqlite+aiosqlite:///./hepops.db"
+    database_url: str = "sqlite+aiosqlite:///./agentops.db"
 
     # --- Lark (飞书) ---
     lark_app_id: str = ""

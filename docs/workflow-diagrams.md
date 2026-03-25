@@ -1,4 +1,4 @@
-# HepOps 运维自动化 — 企业工作流程图
+# AgentOps — Workflow Diagrams
 
 > 可直接粘贴到飞书文档 / Notion / 语雀 / mermaid.live 中渲染
 
@@ -56,7 +56,7 @@ flowchart LR
         D[机器人通知]
     end
 
-    subgraph HepOps
+    subgraph AgentOps
         E[事件接收]
         F[自动执行]
     end
@@ -142,7 +142,7 @@ flowchart TD
 flowchart TD
     A["业务负责人在飞书提交云资源申请"] --> B{主管审批}
     B -->|拒绝| Z[飞书通知 审批被拒]
-    B -->|通过| C[飞书回调 HepOps 后端]
+    B -->|通过| C[飞书回调 AgentOps 后端]
 
     C --> D["解析表单: 云厂商+资源类型+规格+立项信息"]
     D --> E{云厂商路由}
@@ -189,7 +189,7 @@ flowchart TD
 flowchart TD
     A["业务负责人在飞书提交域名变更申请"] --> B{主管审批}
     B -->|拒绝| Z[飞书通知 审批被拒]
-    B -->|通过| C[飞书回调 HepOps 后端]
+    B -->|通过| C[飞书回调 AgentOps 后端]
 
     C --> D{检查等保备案状态}
     D -->|未备案| E["飞书通知 域名变更被拒绝 请先完成等保备案"]
@@ -262,7 +262,7 @@ flowchart TB
         LC["通知 群机器人+单聊"]
     end
 
-    subgraph HepOps
+    subgraph AgentOps
         EA["事件接收 /api/lark/events"]
         EB[工作流路由]
         EC["流程1: 云资源开通"]
@@ -322,14 +322,190 @@ flowchart TB
 
 ---
 
+## 图 7: Phase 2 — AI 对话式云操作
+
+```mermaid
+%%{init: {'flowchart': {'useMaxWidth': false}} }%%
+flowchart TD
+    A["业务负责人在飞书群发消息<br/>@AgentOps 帮我开一个4G Redis"] --> B["LLM 意图识别"]
+    B --> C["提取参数: Redis/4G/阿里云/order-service"]
+    C --> D{风险等级判断}
+
+    D -->|低风险-查询类| E[直接执行并回复结果]
+    D -->|中风险-测试资源| F["发送确认卡片"]
+    D -->|高风险-生产/大金额| G["自动发起飞书审批流"]
+
+    F -->|用户点确认| H["调用 Phase 1 已有 workflows"]
+    G -->|审批通过| H
+
+    H --> I["执行云 API 操作"]
+    I --> J["飞书回复结果+连接信息"]
+
+    style A fill:#4c6ef5,color:#fff
+    style B fill:#be4bdb,color:#fff
+    style H fill:#51cf66,color:#fff
+    style J fill:#51cf66,color:#fff
+```
+
+---
+
+## 图 8: Phase 2 — LLM Vibe Coding（干掉RD）
+
+```mermaid
+%%{init: {'flowchart': {'useMaxWidth': false}} }%%
+flowchart TD
+    A["业务负责人在飞书描述需求<br/>或上传PRD文档"] --> B["AgentOps 解析需求"]
+    B --> C["Coding Agent clone 目标仓库"]
+    C --> D["分析项目结构和现有代码"]
+    D --> E["LLM 生成代码"]
+    E --> F["Review Agent 审查代码"]
+
+    F --> G{审查结果}
+    G -->|通过| H["自动 push 到 Gitee"]
+    G -->|不通过| I["反馈给 Coding Agent 修改"]
+    I -->|最多3轮| E
+
+    H --> J["云效自动构建部署"]
+    J --> K["飞书通知: 功能已上线"]
+
+    style A fill:#4c6ef5,color:#fff
+    style E fill:#be4bdb,color:#fff
+    style F fill:#fd7e14,color:#fff
+    style H fill:#51cf66,color:#fff
+    style K fill:#51cf66,color:#fff
+```
+
+### Coding Agent vs Review Agent 双模型交叉审查
+
+| Agent | 职责 | 建议模型 |
+|-------|------|---------|
+| Coding Agent | 理解需求 + 生成代码 | Claude（代码能力最强） |
+| Review Agent | 安全/质量/逻辑审查 | DeepSeek（交叉审查 + 降本） |
+
+---
+
+## 图 9: Phase 2 完整架构（Phase 1 + Phase 2）
+
+```mermaid
+%%{init: {'flowchart': {'useMaxWidth': false}} }%%
+flowchart TB
+    subgraph 用户层
+        U1["业务负责人"]
+        U2["研发/LLM"]
+        M[主管]
+    end
+
+    subgraph 飞书
+        LA["审批表单 x3"]
+        LB[审批流转]
+        LC["通知 群机器人+单聊"]
+        LD["机器人对话 Phase2"]
+    end
+
+    subgraph "AgentOps 引擎"
+        EA["审批事件接收"]
+        EB["机器人消息接收"]
+        EC["意图识别 LLM"]
+
+        subgraph "Phase 1 Workflows"
+            W1["云资源开通"]
+            W2["部署流水线"]
+            W3["域名替换"]
+        end
+
+        subgraph "Phase 2 Agents"
+            AG1["Coding Agent"]
+            AG2["Review Agent"]
+            AG3["Git Ops"]
+        end
+
+        EF["定时任务"]
+        EG[资源台账+日志]
+    end
+
+    subgraph 外部服务
+        CA["阿里云/华为云/腾讯云"]
+        GIT["Gitee 仓库"]
+        LLM["LLM API Claude/DeepSeek"]
+    end
+
+    subgraph 数据库
+        DB[(SQLite)]
+    end
+
+    U1 -->|审批表单| LA
+    U1 -->|对话| LD
+    LA --> LB --> M -->|通过| EA
+    LD --> EB --> EC
+
+    EA --> W1
+    EA --> W2
+    EA --> W3
+    EC --> W1
+    EC --> W2
+    EC --> W3
+    EC --> AG1
+
+    W1 --> CA
+    W2 --> CA
+    W3 --> CA
+
+    AG1 --> LLM
+    AG1 --> GIT
+    AG2 --> LLM
+    AG1 --> AG2
+    AG2 -->|通过| AG3
+    AG3 --> GIT
+
+    W1 --> EG
+    W2 --> EG
+    W3 --> EG
+    EG --> DB
+    EF --> DB
+    EF -->|通知| LC
+
+    W1 -->|结果| LC
+    W2 -->|结果| LC
+    W3 -->|结果| LC
+    AG3 -->|部署完成| LC
+    LC --> U1
+
+    style EA fill:#4c6ef5,color:#fff
+    style EB fill:#be4bdb,color:#fff
+    style EC fill:#be4bdb,color:#fff
+    style AG1 fill:#be4bdb,color:#fff
+    style AG2 fill:#fd7e14,color:#fff
+    style EF fill:#ffd43b,color:#333
+    style CA fill:#ff922b,color:#fff
+```
+
+---
+
+## 图 10: 里程碑总览
+
+```mermaid
+%%{init: {'flowchart': {'useMaxWidth': false}} }%%
+flowchart LR
+    A["Phase 1 已完成<br/>干掉运维"] --> B["Phase 2.1 第1-2周<br/>AI对话式云操作"]
+    B --> C["Phase 2.2 第3-5周<br/>LLM Vibe Coding"]
+    C --> D["Phase 2.3 第6周<br/>优化+模型对比"]
+
+    style A fill:#51cf66,color:#fff
+    style B fill:#4c6ef5,color:#fff
+    style C fill:#be4bdb,color:#fff
+    style D fill:#ffd43b,color:#333
+```
+
+---
+
 ## 价值总结
 
-| 维度 | 现状 (人工) | 自动化后 |
-|------|------------|---------|
-| **人力成本** | 2 名运维工程师 | 0 人（系统自动执行） |
-| **响应速度** | 几小时到几天（等运维排期） | 分钟级（审批通过即执行） |
-| **出错率** | 高（手动操作易遗漏配置） | 极低（标准化 API 调用） |
-| **可追溯性** | 无（口头/邮件沟通） | 完整审计日志 + 飞书审批留痕 |
-| **资源管理** | 无台账，不知道开了什么资源 | 自动台账 + 到期提醒(通知3类人) + 成本报表 |
-| **合规性** | 无立项审核，无等保校验 | 资源申请需立项签报，域名变更需等保备案 |
-| **研发体验** | 需要找运维、等排期 | 飞书一键提交，自助完成 |
+| 维度 | 现状 (人工) | Phase 1 自动化 | Phase 2 AI 驱动 |
+|------|------------|---------------|----------------|
+| **运维人力** | 2 名运维工程师 | 0 人 | 0 人 |
+| **研发人力** | 外包 RD 团队 | 外包 RD 团队 | LLM 替代（0人） |
+| **操作方式** | 口头/邮件找运维 | 飞书审批表单 | 飞书对话一句话 |
+| **响应速度** | 几小时到几天 | 分钟级 | 秒级 |
+| **写代码** | 人工开发 | 人工开发 | LLM 自动生成 + AI 审查 |
+| **资源管理** | 无台账 | 自动台账+到期提醒 | 对话查询+智能推荐 |
+| **合规性** | 无 | 立项签报+等保备案 | 同 Phase 1 + AI 安全审查 |

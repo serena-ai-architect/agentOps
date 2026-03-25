@@ -1,0 +1,28 @@
+# Claude Progress — AgentOps
+# This file is maintained by Claude Code at the end of each session.
+# Do NOT manually edit unless correcting an error.
+
+## Last Updated
+2026-03-25
+
+## Current State
+- Renamed from HepOps → AgentOps (AI-native DevOps platform replacing manual ops)
+- Deleted duplicate agentflow/ directory
+- Phase 1 (3 core workflows: resource provisioning, pipeline setup, domain change) is complete
+- Phase 0-8 architecture expansion is planned but not started
+- Env prefix changed: HEPOPS_ → AGENTOPS_
+
+## What Was Completed
+- Deleted duplicate agentflow/ project (identical codebase)
+- Renamed hepops/ → agentOps/
+- Updated: pyproject.toml, main.py, config.py, Dockerfile, .env.example, CLAUDE.md, AGENTS.md, README.md
+- All HEPOPS_ env vars → AGENTOPS_
+- README rewritten in English with new positioning
+
+## What Is Blocked
+(nothing currently)
+
+## Next Steps
+1. Rewrite docs/architecture-concurrency-cloud.md to cover all 9 pillars
+2. Begin Phase 0: Task Engine + PostgreSQL (foundation for everything)
+3. Begin Phase 1: Cloud Abstraction Layer
