@@ -7,7 +7,6 @@
 当审批通过时，根据审批模板 code 路由到对应的 workflow 执行自动化操作。
 """
 
-import hashlib
 import json
 import logging
 
@@ -38,7 +37,6 @@ async def handle_lark_event(request: Request, background_tasks: BackgroundTasks)
         return {"challenge": challenge}
 
     # --- 2. 事件回调 v2.0 格式 ---
-    schema = body.get("schema")
     header = body.get("header", {})
     event = body.get("event", {})
 
@@ -71,8 +69,37 @@ async def handle_lark_event(request: Request, background_tasks: BackgroundTasks)
 
 
 async def _handle_approved(instance_id: str, approval_code: str):
-    """处理审批通过事件 — 查询表单数据，路由到对应 workflow。"""
+    """处理审批通过事件 — 幂等提交任务，查询表单数据，路由到对应 workflow。"""
+    from engine.task_manager import mark_failed, mark_running, mark_success, submit_task
+
     try:
+        # 确定任务类型
+        if approval_code == settings.lark_approval_pipeline:
+            task_type = "pipeline"
+        elif approval_code == settings.lark_approval_resource:
+            task_type = "provision"
+        elif approval_code == settings.lark_approval_domain:
+            task_type = "domain"
+        else:
+            logger.warning("Unknown approval code: %s, ignoring", approval_code)
+            return
+
+        # 幂等提交：飞书 webhook 重发不会重复执行
+        async with async_session() as db:
+            task, is_new = await submit_task(
+                db=db,
+                idempotency_key=instance_id,
+                task_type=task_type,
+                input_data={"approval_code": approval_code, "instance_id": instance_id},
+            )
+
+            if not is_new:
+                logger.info("Duplicate webhook for %s, skipping (state=%s)", instance_id, task.state)
+                return
+
+            # 标记执行中
+            await mark_running(db, task)
+
         # 查询审批实例详情 (获取表单数据)
         instance = await get_approval_instance(instance_id)
         form = instance["form"]
@@ -83,18 +110,33 @@ async def _handle_approved(instance_id: str, approval_code: str):
             instance_id, approval_code, applicant_id,
         )
 
-        # 根据审批模板 code 路由
-        if approval_code == settings.lark_approval_pipeline:
+        # 路由到对应 workflow
+        if task_type == "pipeline":
             await _dispatch_pipeline_setup(instance_id, form, applicant_id)
-        elif approval_code == settings.lark_approval_resource:
+        elif task_type == "provision":
             await _dispatch_resource_provision(instance_id, form, applicant_id)
-        elif approval_code == settings.lark_approval_domain:
+        elif task_type == "domain":
             await _dispatch_domain_change(instance_id, form, applicant_id)
-        else:
-            logger.warning("Unknown approval code: %s, ignoring", approval_code)
+
+        # 标记成功
+        async with async_session() as db:
+            task = await db.get(type(task), task.id)
+            await mark_success(db, task)
 
     except Exception as e:
         logger.exception("Failed to handle approved instance %s: %s", instance_id, e)
+
+        # 标记失败
+        try:
+            async with async_session() as db:
+                from engine.task_manager import get_task
+
+                task = await get_task(db, instance_id)
+                if task:
+                    await mark_failed(db, task, str(e))
+        except Exception:
+            logger.exception("Failed to update task state for %s", instance_id)
+
         # 发送失败通知
         from lark.notifier import notify_failure
 

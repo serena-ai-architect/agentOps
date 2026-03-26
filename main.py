@@ -19,8 +19,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="AgentOps — AI-native DevOps Platform", lifespan=lifespan)
 
 from api.lark_events import router as lark_router  # noqa: E402
+from api.tasks import router as tasks_router  # noqa: E402
 
 app.include_router(lark_router, prefix="/api/lark")
+app.include_router(tasks_router, prefix="/api")
 
 
 @app.get("/health")

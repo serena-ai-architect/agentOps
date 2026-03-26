@@ -1,9 +1,8 @@
 """Tests for workflow routing — approval code → correct workflow dispatch."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-import pytest_asyncio
 
 from config import settings
 
@@ -55,12 +54,31 @@ MOCK_DOMAIN_FORM = [
 ]
 
 
+def _mock_submit_task():
+    """Mock submit_task to return a fake task record and is_new=True."""
+    from unittest.mock import MagicMock
+
+    fake_task = MagicMock()
+    fake_task.id = 1
+    fake_task.state = "pending"
+
+    async def mock_submit(db, idempotency_key, task_type, input_data):
+        return fake_task, True
+
+    return mock_submit, fake_task
+
+
 @pytest.mark.asyncio
 class TestWorkflowRouting:
     async def test_pipeline_code_dispatches_to_pipeline_setup(self, approval_codes):
+        mock_submit, fake_task = _mock_submit_task()
         with (
             patch("api.lark_events.get_approval_instance", new_callable=AsyncMock) as mock_get,
             patch("api.lark_events._dispatch_pipeline_setup", new_callable=AsyncMock) as mock_dispatch,
+            patch("engine.task_manager.submit_task", side_effect=mock_submit),
+            patch("engine.task_manager.mark_running", new_callable=AsyncMock),
+            patch("engine.task_manager.mark_success", new_callable=AsyncMock),
+            patch("api.lark_events.async_session"),
         ):
             mock_get.return_value = {
                 "approval_code": "PIPELINE_CODE",
@@ -76,9 +94,14 @@ class TestWorkflowRouting:
             mock_dispatch.assert_called_once_with("instance_001", MOCK_FORM, "user_001")
 
     async def test_resource_code_dispatches_to_resource_provision(self, approval_codes):
+        mock_submit, fake_task = _mock_submit_task()
         with (
             patch("api.lark_events.get_approval_instance", new_callable=AsyncMock) as mock_get,
             patch("api.lark_events._dispatch_resource_provision", new_callable=AsyncMock) as mock_dispatch,
+            patch("engine.task_manager.submit_task", side_effect=mock_submit),
+            patch("engine.task_manager.mark_running", new_callable=AsyncMock),
+            patch("engine.task_manager.mark_success", new_callable=AsyncMock),
+            patch("api.lark_events.async_session"),
         ):
             mock_get.return_value = {
                 "approval_code": "RESOURCE_CODE",
@@ -94,9 +117,14 @@ class TestWorkflowRouting:
             mock_dispatch.assert_called_once_with("instance_002", MOCK_RESOURCE_FORM, "user_002")
 
     async def test_domain_code_dispatches_to_domain_change(self, approval_codes):
+        mock_submit, fake_task = _mock_submit_task()
         with (
             patch("api.lark_events.get_approval_instance", new_callable=AsyncMock) as mock_get,
             patch("api.lark_events._dispatch_domain_change", new_callable=AsyncMock) as mock_dispatch,
+            patch("engine.task_manager.submit_task", side_effect=mock_submit),
+            patch("engine.task_manager.mark_running", new_callable=AsyncMock),
+            patch("engine.task_manager.mark_success", new_callable=AsyncMock),
+            patch("api.lark_events.async_session"),
         ):
             mock_get.return_value = {
                 "approval_code": "DOMAIN_CODE",
@@ -113,18 +141,10 @@ class TestWorkflowRouting:
 
     async def test_unknown_approval_code_is_ignored(self, approval_codes):
         with (
-            patch("api.lark_events.get_approval_instance", new_callable=AsyncMock) as mock_get,
             patch("api.lark_events._dispatch_pipeline_setup", new_callable=AsyncMock) as p,
             patch("api.lark_events._dispatch_resource_provision", new_callable=AsyncMock) as r,
             patch("api.lark_events._dispatch_domain_change", new_callable=AsyncMock) as d,
         ):
-            mock_get.return_value = {
-                "approval_code": "UNKNOWN_CODE",
-                "status": "APPROVED",
-                "form": [],
-                "applicant_id": "user_004",
-            }
-
             from api.lark_events import _handle_approved
 
             await _handle_approved("instance_004", "UNKNOWN_CODE")

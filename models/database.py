@@ -13,7 +13,7 @@ class Base(DeclarativeBase):
 
 async def init_db():
     # Import models to register with metadata
-    from models import operation_log, pipeline_record, resource_record  # noqa: F401
+    from models import operation_log, pipeline_record, resource_record, task_record  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
