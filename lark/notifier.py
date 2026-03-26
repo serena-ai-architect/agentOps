@@ -80,7 +80,7 @@ async def notify_domain_changed(
 async def notify_expiry_warning(resources: list[dict]):
     """发送资源到期预警通知。
 
-    通知对象: 业务负责人(owner) + 公有云负责人 + 信息技术部主任杨京峰
+    通知对象: 业务负责人(owner) + 公有云负责人 + 信息技术部主任
     同时发送到群 webhook (全员可见) 和单聊消息 (定向通知负责人)。
 
     Args:
@@ -100,7 +100,7 @@ async def notify_expiry_warning(resources: list[dict]):
     # 1. 发送到通知群 (所有人可见)
     await _send_rich_text(title="\u26a0\ufe0f 云资源到期预警", content_lines=lines)
 
-    # 2. 单聊通知: 公有云负责人 + 信息技术部主任杨京峰
+    # 2. 单聊通知: 公有云负责人 + 信息技术部主任
     fixed_recipients = []
     if settings.lark_notify_cloud_admin:
         fixed_recipients.append(settings.lark_notify_cloud_admin)
@@ -189,15 +189,11 @@ async def _send_direct_message(user_id: str, title: str, content_lines: list[lis
     try:
         import json
 
-        import lark_oapi as lark
         from lark_oapi.api.im.v1 import CreateMessageRequest, CreateMessageRequestBody
 
-        client = (
-            lark.Client.builder()
-            .app_id(settings.lark_app_id)
-            .app_secret(settings.lark_app_secret)
-            .build()
-        )
+        from lark.client import get_lark_client
+
+        client = get_lark_client()
 
         content = {
             "zh_cn": {

@@ -8,7 +8,7 @@ import json
 import logging
 
 import lark_oapi as lark
-from lark_oapi.api.approval.v4 import GetApprovalInstanceRequest
+from lark_oapi.api.approval.v4 import GetInstanceRequest
 
 from config import settings
 
@@ -46,7 +46,7 @@ async def get_approval_instance(instance_id: str) -> dict:
     client = get_lark_client()
 
     request = (
-        GetApprovalInstanceRequest.builder()
+        GetInstanceRequest.builder()
         .instance_id(instance_id)
         .build()
     )

@@ -68,9 +68,9 @@ async def _create_instance(name: str, flavor: str, is_gpu: bool) -> dict:
     server = PostPaidServer(
         name=name,
         flavor_ref=flavor,
-        image_ref="",  # 需要填实际镜像 ID，如 Ubuntu 22.04
+        image_ref=settings.hw_ecs_image_id,
         root_volume=PostPaidServerRootVolume(volumetype="SSD", size=40),
-        nics=[PostPaidServerNic(subnet_id="")],  # 需要填实际子网 ID
+        nics=[PostPaidServerNic(subnet_id=settings.hw_ecs_subnet_id)],
         admin_pass=password,
         count=1,
     )

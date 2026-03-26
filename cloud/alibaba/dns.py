@@ -76,7 +76,7 @@ async def find_dns_record(subdomain: str) -> str | None:
     return None
 
 
-async def delete_dns_record(record_id: str):
+async def delete_dns_record(record_id: str) -> None:
     """删除 DNS 记录。"""
     client = _get_client()
 

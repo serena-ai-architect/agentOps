@@ -1,6 +1,6 @@
-# AgentOps — AI-native DevOps Platform
+# AgentOps — Enterprise Multi-Cloud Automation Engine
 
-> Replacing manual ops with autonomous agents: approval-driven, multi-cloud, zero human intervention
+> Lark-approval-driven cloud operations across Alibaba, Huawei, and Tencent Cloud — designed for regulated enterprise environments
 
 ## What It Does
 
@@ -8,7 +8,7 @@ Traditional ops flow: someone requests resources → ops engineer manually logs 
 
 **Pain point**: ops engineers are the bottleneck — slow response, error-prone, no audit trail.
 
-**AgentOps**: turns manual operations into API calls, triggered by approval workflows, fully automated end-to-end.
+**AgentOps**: turns manual cloud operations into API-driven workflows, triggered by Lark approval forms, with full audit logging.
 
 ## Three Core Workflows
 
@@ -70,7 +70,16 @@ docker build -t agentops .
 docker run -p 8000:8000 --env-file .env agentops
 ```
 
-### 4. Verify
+### 4. Run Tests
+
+```bash
+pip install -e ".[dev]"
+pytest
+# 52 passed — covers form parsing, workflow routing, resource provisioning,
+# pipeline setup, domain change, scheduled tasks, and API endpoints
+```
+
+### 5. Verify
 
 ```bash
 curl http://localhost:8000/health
@@ -120,6 +129,14 @@ agentOps/
 │   ├── pipeline_record.py      # Pipeline records
 │   ├── resource_record.py      # Resource ledger
 │   └── operation_log.py        # Operation audit log
+├── tests/
+│   ├── test_api.py             # API endpoint tests
+│   ├── test_form_parsing.py    # Lark form field extraction
+│   ├── test_workflow_routing.py # Approval code → workflow dispatch
+│   ├── test_resource_provision.py # Multi-cloud resource provisioning
+│   ├── test_pipeline_setup.py  # CI/CD pipeline creation
+│   ├── test_domain_change.py   # Domain replacement workflow
+│   └── test_scheduler.py       # Expiry alerts + cost reports
 └── docs/
     └── workflow-diagrams.md    # Mermaid flow diagrams
 ```

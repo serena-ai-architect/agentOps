@@ -35,7 +35,7 @@ async def create_cvm_instance(name: str, spec: str | None = None) -> dict:
     params = {
         "InstanceName": name,
         "InstanceType": instance_type,
-        "ImageId": "img-eb30mz89",  # Ubuntu 22.04 LTS
+        "ImageId": settings.tc_cvm_image_id,
         "SystemDisk": {"DiskType": "CLOUD_PREMIUM", "DiskSize": 50},
         "InstanceCount": 1,
         "InstanceChargeType": "POSTPAID_BY_HOUR",

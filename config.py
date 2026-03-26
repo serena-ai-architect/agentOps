@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     lark_approval_resource: str = ""  # "云资源申请" 模板 code
     lark_approval_domain: str = ""  # "域名变更申请" 模板 code
     # 资源到期通知收件人 (飞书 user_id / open_id)
-    lark_notify_cloud_admin: str = ""  # 公有云负责人
-    lark_notify_it_director: str = ""  # 信息技术部主任杨京峰
+    lark_notify_cloud_admin: str = ""  # 公有云负责人 (飞书 open_id)
+    lark_notify_it_director: str = ""  # 信息技术部主任 (飞书 open_id)
 
     # --- Alibaba Cloud ---
     ali_access_key_id: str = ""
@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     tc_secret_id: str = ""
     tc_secret_key: str = ""
     tc_region: str = "ap-beijing"
+
+    # --- Default Images (override via env if needed) ---
+    ali_ecs_image_id: str = "aliyun_3_x64_20G_alibase_20240819.vhd"
+    hw_ecs_image_id: str = ""  # e.g. Ubuntu 22.04 image ID from Huawei Cloud console
+    hw_ecs_subnet_id: str = ""  # Huawei Cloud subnet ID for ECS
+    tc_cvm_image_id: str = "img-eb30mz89"  # Ubuntu 22.04 LTS
 
 
 settings = Settings()
